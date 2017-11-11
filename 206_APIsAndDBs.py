@@ -18,8 +18,8 @@ import twitter_info # same deal as always...
 import json
 import sqlite3
 
-## Your name:
-## The names of anyone you worked with on this project:
+## Your name: Kayla Williams 
+## The names of anyone you worked with on this project: Amanda Gomez 
 
 #####
 
@@ -50,18 +50,44 @@ api = tweepy.API(auth, parser=tweepy.parsers.JSONParser())
 CACHE_FNAME = "206_APIsAndDBs_cache.json"
 # Put the rest of your caching setup here:
 
-
+try:
+	cache_file = open(CACHE_FNAME,'r') # load data if you will already made cache and put into the variable
+	cache_contents = cache_file.read()
+	cache_file.close()
+	CACHE_DICTION = json.loads(cache_contents)
+except:
+	CACHE_DICTION = {} # creates a new variable for it 
 
 # Define your function get_user_tweets here:
 
+def get_user_tweets(user):
 
 
+	if user in CACHE_DICTION:
+		print('cached')
+		twitter_results = CACHE_DICTION[user] # grab data from cache!
+
+	else:
+		print('getting data from internet')
+		twitter_results = api.user_timeline(screen_name = user, count = 20) # get it from the internet
+		
+		print(twitter_results)
+		
+		CACHE_DICTION[user] = twitter_results #save twitter results into cache
+		jsd = json.dumps(CACHE_DICTION) #save it using json 
+		cache_file = open(CACHE_FNAME, 'w')
+		cache_file.write(jsd)
+		cache_file.close()
+
+	return twitter_results 
 
 
 # Write an invocation to the function for the "umich" user timeline and 
 # save the result in a variable called umich_tweets:
 
+umich_tweets = get_user_tweets("@umich")
 
+#print(umich_tweets[0])
 
 
 ## Task 2 - Creating database and loading data into database
@@ -72,6 +98,29 @@ CACHE_FNAME = "206_APIsAndDBs_cache.json"
 # mentioned in the umich timeline, that Twitter user's info should be 
 # in the Users table, etc.
 
+conn = sqlite3.connect('206_APIsAndDBs.sqlite')
+cur = conn.cursor() #connects to database 
+
+cur.execute('DROP TABLE IF EXISTS Tweets') #if table exists for tweets it will delete itself and make a new one 
+cur.execute('CREATE TABLE Tweets(tweet_id TEXT PRIMARY KEY, tweet_text TEXT, user_posted TEXT, time_posted DATETIME, retweets NUMBER)')
+
+cur.execute('DROP TABLE IF EXISTS Users') #if table exists for user it will delete itself and make a new one 
+cur.execute('CREATE TABLE Users(user_id TEXT PRIMARY KEY , screen_name TEXT, num_favs TEXT, description TEXT )')
+
+umich_tweets = get_user_tweets("@umich")
+
+#print(umich_tweets[0])
+
+for tw in umich_tweets:
+	tup = tw['id'], tw['text'],tw['id_str'],tw['created_at'],tw['retweeted']
+	cur.execute('INSERT OR IGNORE INTO Tweets (tweet_id, tweet_text, time_posted, tweet_text, retweets) VALUES (?,?,?,?,?)',tup) #puts information from tuple into database
+
+for us in umich_tweets:
+	tup2 = us['id'],us['user']['screen_name'],us['favorite_count'], us['user']['description']
+	cur.execute('INSERT OR IGNORE INTO Users (user_id, screen_name, num_favs, description) VALUES (?,?,?,?)',tup2)
+
+
+conn.commit()
 
 
 ## You should load into the Tweets table: 
