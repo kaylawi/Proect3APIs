@@ -105,20 +105,25 @@ cur.execute('DROP TABLE IF EXISTS Tweets') #if table exists for tweets it will d
 cur.execute('CREATE TABLE Tweets(tweet_id TEXT PRIMARY KEY, tweet_text TEXT, user_posted TEXT, time_posted DATETIME, retweets NUMBER)')
 
 cur.execute('DROP TABLE IF EXISTS Users') #if table exists for user it will delete itself and make a new one 
-cur.execute('CREATE TABLE Users(user_id TEXT PRIMARY KEY , screen_name TEXT, num_favs TEXT, description TEXT )')
+cur.execute('CREATE TABLE Users(user_id TEXT PRIMARY KEY, screen_name TEXT, num_favs TEXT, description TEXT )')
 
 umich_tweets = get_user_tweets("@umich")
 
 #print(umich_tweets[0])
 
+# look through tweets with @umich attached to it and then find if any users are mentioned
+
+
 for tw in umich_tweets:
-	tup = tw['id'], tw['text'],tw['id_str'],tw['created_at'],tw['retweeted']
-	cur.execute('INSERT OR IGNORE INTO Tweets (tweet_id, tweet_text, time_posted, tweet_text, retweets) VALUES (?,?,?,?,?)',tup) #puts information from tuple into database
+	s = "INSERT OR IGNORE INTO Tweets Values (?,?,?,?,?)"
+	tup = (tw['id_str'], tw['text'],tw['user']['id_str'],tw['user']['created_at'],tw['retweeted'])
+	cur.execute(s, tup)
 
-for us in umich_tweets:
-	tup2 = us['id'],us['user']['screen_name'],us['favorite_count'], us['user']['description']
-	cur.execute('INSERT OR IGNORE INTO Users (user_id, screen_name, num_favs, description) VALUES (?,?,?,?)',tup2)
-
+	for us in tw['entities']['user_mentions']:
+		u = api.get_user(us['screen_name'])
+		s = "INSERT OR IGNORE INTO Users Values (?,?,?,?)"
+		tup2 = (u['id_str'],u['screen_name'],u['favourites_count'], u['description'])
+		cur.execute(s, tup2)
 
 conn.commit()
 
