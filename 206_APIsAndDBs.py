@@ -160,15 +160,18 @@ users_info = cur.fetchall() # get all of the information about users
 # in the variable screen_names. HINT: a list comprehension will make 
 # this easier to complete! 
 
-cur.execute('SELECT screen_name FROM Users')
-screen_names = cur.fetchall() 
+data = 'SELECT screen_name FROM Users'
+cur.execute(data)
+anything = cur.fetchall()
+screen_names = [a[0] for a in anything ]
 
 
 # Make a query to select all of the tweets (full rows of tweet information)
 # that have been retweeted more than 10 times. Save the result 
 # (a list of tuples, or an empty list) in a variable called retweets.
 
-cur.execute('SELECT * FROM Tweets') 
+data = 'SELECT * FROM Tweets WHERE retweets > 25' 
+cur.execute(data) 
 retweets = cur.fetchall()
 
 # Make a query to select all the descriptions (descriptions only) of 
@@ -176,8 +179,9 @@ retweets = cur.fetchall()
 # strings, and save them in a variable called favorites, 
 # which should ultimately be a list of strings.
 
-cur.execute('SELECT description FROM Users')
-favorites = cur.fetchall()
+data = 'SELECT description FROM Users WHERE num_favs > 500'
+cur.execute(data)
+favorites = [d[0] for d in cur.fetchall()]
 
 
 # Make a query using an INNER JOIN to get a list of tuples with 2 
@@ -185,8 +189,8 @@ favorites = cur.fetchall()
 # tweet. Save the resulting list of tuples in a variable called joined_data2.
 
 
-statement = 'SELECT screen_name, text FROM Users INNER JOIN Tweets ON Tweets.user_id = Users.user_id WHERE retweets > 50'
-cur.execute(statement)
+data = 'SELECT Users.screen_name, Tweets.tweet_text FROM Users INNER JOIN Tweets ON Users.user_id = Tweets.user_posted'
+cur.execute(data)
 joined_data = cur.fetchall()
 
 # Make a query using an INNER JOIN to get a list of tuples with 2 
@@ -194,6 +198,8 @@ joined_data = cur.fetchall()
 # tweet in descending order based on retweets. Save the resulting 
 # list of tuples in a variable called joined_data2.
 
+data = 'SELECT Users.screen_name, Tweets.tweet_text FROM Users INNER JOIN Tweets ON  Users.user_id = Tweets.user_posted  ORDER BY retweets DESC'
+cur.execute(data)
 joined_data2 = cur.fetchall()
 
 
